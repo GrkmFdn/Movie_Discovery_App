@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'providers/movie_provider.dart';
 import 'providers/profile_provider.dart';
+import 'providers/list_provider.dart';
+import 'providers/watched_provider.dart';
 import 'screens/main_shell.dart';
 import 'core/constants.dart';
 
@@ -29,6 +31,8 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => MovieProvider()),
         ChangeNotifierProvider(create: (_) => ProfileProvider()..loadProfile()),
+        ChangeNotifierProvider(create: (_) => ListProvider()..loadLists()),
+        ChangeNotifierProvider(create: (_) => WatchedProvider()),
       ],
       child: MaterialApp(
         title: AppConstants.appName,

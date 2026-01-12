@@ -6,11 +6,13 @@ import '../services/tmdb_service.dart';
 class MovieProvider with ChangeNotifier {
   final TmdbService _tmdbService = TmdbService();
   
+  bool _initialized = false;
+  
   List<Movie> _popularMovies = [];
   List<Movie> _trendingMovies = [];
   List<Movie> _searchResults = [];
   List<Genre> _genres = [];
-  Map<int, List<Movie>> _moviesByGenre = {};
+  final Map<int, List<Movie>> _moviesByGenre = {};
   
   bool _isLoadingPopular = false;
   bool _isLoadingTrending = false;
@@ -36,77 +38,72 @@ class MovieProvider with ChangeNotifier {
   
   List<Movie> getMoviesByGenre(int genreId) => _moviesByGenre[genreId] ?? [];
 
-  /// Popüler filmleri yükle
-  Future<void> loadPopularMovies() async {
-    if (_isLoadingPopular) return;
-    
-    _isLoadingPopular = true;
+  /// Merkezi başlatma fonksiyonu
+  /// Tek sefer çalışır, tek bir başlangıç/bitiş notify yapar
+  Future<void> init() async {
+    if (_initialized) return;
+    _initialized = true;
+
     _error = null;
+    _isLoadingPopular = true;
+    _isLoadingTrending = true;
+    _isLoadingGenres = true;
+    // Başlangıç notify
     notifyListeners();
-    
+
     try {
-      _popularMovies = await _tmdbService.getPopularMovies();
+      final results = await Future.wait([
+        _tmdbService.getPopularMovies(),
+        _tmdbService.getTrendingMovies(),
+        _tmdbService.getGenres(),
+      ]);
+
+      _popularMovies = results[0] as List<Movie>;
+      _trendingMovies = results[1] as List<Movie>;
+      _genres = results[2] as List<Genre>;
+      
+      // İlk 3 kategori için de filmleri önden yükleyelim (opsiyonel ama iyi olur)
+      if (_genres.isNotEmpty) {
+        for (var i = 0; i < _genres.length && i < 3; i++) {
+          await _loadMoviesByGenreInternal(_genres[i].id);
+        }
+      }
+      
     } catch (e) {
       _error = e.toString();
+      debugPrint('Init Error: $_error');
     } finally {
       _isLoadingPopular = false;
-      notifyListeners();
-    }
-  }
-
-  /// Trend filmleri yükle
-  Future<void> loadTrendingMovies() async {
-    if (_isLoadingTrending) return;
-    
-    _isLoadingTrending = true;
-    _error = null;
-    notifyListeners();
-    
-    try {
-      _trendingMovies = await _tmdbService.getTrendingMovies();
-    } catch (e) {
-      _error = e.toString();
-    } finally {
       _isLoadingTrending = false;
-      notifyListeners();
-    }
-  }
-
-  /// Kategorileri yükle
-  Future<void> loadGenres() async {
-    if (_isLoadingGenres) return;
-    
-    _isLoadingGenres = true;
-    _error = null;
-    notifyListeners();
-    
-    try {
-      _genres = await _tmdbService.getGenres();
-    } catch (e) {
-      _error = e.toString();
-    } finally {
       _isLoadingGenres = false;
+      // Bitiş notify
       notifyListeners();
     }
   }
 
-  /// Kategoriye göre film yükle
+  /// Kategoriye göre film yükle - Optimize edilmiş
   Future<void> loadMoviesByGenre(int genreId) async {
     if (_moviesByGenre.containsKey(genreId)) return;
     
+    await _loadMoviesByGenreInternal(genreId);
+    notifyListeners();
+  }
+
+  /// Dahili kullanım için, notify yapmaz
+  Future<void> _loadMoviesByGenreInternal(int genreId) async {
     try {
       final movies = await _tmdbService.getMoviesByGenre(genreId);
       _moviesByGenre[genreId] = movies;
-      notifyListeners();
     } catch (e) {
-      _error = e.toString();
-      notifyListeners();
+      // Sessiz hata yönetimi veya loglama
+      debugPrint('Genre Load Error ($genreId): $e');
     }
   }
 
   /// Film ara
   Future<void> searchMovies(String query) async {
     _searchQuery = query;
+    _error = null;
     
     if (query.trim().isEmpty) {
       _searchResults = [];
@@ -115,7 +112,6 @@ class MovieProvider with ChangeNotifier {
     }
     
     _isSearching = true;
-    _error = null;
     notifyListeners();
     
     try {
@@ -134,13 +130,11 @@ class MovieProvider with ChangeNotifier {
     _searchResults = [];
     notifyListeners();
   }
-
-  /// Tüm verileri yükle
-  Future<void> loadInitialData() async {
-    await Future.wait([
-      loadPopularMovies(),
-      loadTrendingMovies(),
-      loadGenres(),
-    ]);
+  
+  /// Sayfa yenileme (Pull-to-refresh) için
+  Future<void> refresh() async {
+    _initialized = false;
+    _moviesByGenre.clear();
+    await init();
   }
 }

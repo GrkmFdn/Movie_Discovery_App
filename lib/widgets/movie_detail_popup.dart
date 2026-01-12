@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../models/movie.dart';
 import '../models/genre.dart';
+import '../providers/watched_provider.dart';
 
 class MovieDetailPopup extends StatelessWidget {
   final Movie movie;
@@ -241,18 +243,33 @@ class MovieDetailPopup extends StatelessWidget {
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: onMarkWatched,
-                          icon: const Icon(Icons.check_circle_outline),
-                          label: const Text('İzledim'),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: const Color(0xFF667EEA),
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            side: const BorderSide(color: Color(0xFF667EEA)),
-                          ),
+                        child: Consumer<WatchedProvider>(
+                          builder: (context, watchedProvider, _) {
+                            final isWatched = watchedProvider.isWatched(movie.id);
+                            
+                            return OutlinedButton.icon(
+                              onPressed: () async {
+                                if (isWatched) {
+                                  await watchedProvider.removeFromWatched(movie.id);
+                                } else {
+                                  await watchedProvider.addToWatched(movie);
+                                }
+                              },
+                              icon: Icon(
+                                isWatched ? Icons.check_circle_rounded : Icons.check_circle_outline,
+                              ),
+                              label: Text(isWatched ? 'İzlendi' : 'İzledim'),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: isWatched ? Colors.white : const Color(0xFF667EEA),
+                                backgroundColor: isWatched ? const Color(0xFF667EEA) : null,
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                side: const BorderSide(color: Color(0xFF667EEA)),
+                              ),
+                            );
+                          },
                         ),
                       ),
                     ],

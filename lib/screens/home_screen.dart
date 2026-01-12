@@ -9,6 +9,7 @@ import '../widgets/movie_card.dart';
 import '../widgets/movie_horizontal_list.dart';
 import '../widgets/movie_detail_popup.dart';
 import '../widgets/genre_chip.dart';
+import '../widgets/add_to_list_sheet.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -25,8 +26,14 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _loadData();
     _searchController.addListener(_onSearchChanged);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Veri yüklemeyi başlat (sadece ilk kez çalışır)
+    context.read<MovieProvider>().init();
   }
 
   @override
@@ -38,23 +45,18 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _onSearchChanged() {
     if (_searchController.text.isEmpty) {
-      setState(() {
-        _showSearchResults = false;
-      });
+      if (mounted) {
+        setState(() {
+          _showSearchResults = false;
+        });
+      }
       context.read<MovieProvider>().clearSearch();
     }
   }
 
-  Future<void> _loadData() async {
-    final movieProvider = context.read<MovieProvider>();
-    await movieProvider.loadInitialData();
-    
-    // Load movies for first 4 genres
-    if (movieProvider.genres.isNotEmpty) {
-      for (int i = 0; i < movieProvider.genres.length && i < 4; i++) {
-        await movieProvider.loadMoviesByGenre(movieProvider.genres[i].id);
-      }
-    }
+  // Pull-to-refresh için kullanılacak
+  Future<void> _onRefresh() async {
+    await context.read<MovieProvider>().refresh();
   }
 
   void _onSearch(String query) {
@@ -74,12 +76,7 @@ class _HomeScreenState extends State<HomeScreen> {
       movieProvider.genres,
       onAddToList: () {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Listeye ekleme özelliği yakında!'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        showAddToListBottomSheet(context, movie);
       },
       onMarkWatched: () {
         Navigator.pop(context);
@@ -108,7 +105,7 @@ class _HomeScreenState extends State<HomeScreen> {
       backgroundColor: Colors.white,
       body: SafeArea(
         child: RefreshIndicator(
-          onRefresh: _loadData,
+          onRefresh: _onRefresh,
           child: CustomScrollView(
             slivers: [
               // App Bar with Profile and Search
@@ -273,7 +270,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               .firstWhere((g) => g.id == _selectedGenreId)
                               .name,
                           subtitle: 'Kategori filmleri',
-                          movies: movieProvider.getMoviesByGenre(_selectedGenreId!),
+                          movies: movieProvider.getMoviesByGenre(_selectedGenreId!).take(7).toList(),
                           onMovieTap: _onMovieTap,
                         ),
                         const SizedBox(height: 28),
@@ -283,7 +280,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       MovieHorizontalList(
                         title: 'Trend Filmler',
                         subtitle: 'Bu hafta popüler',
-                        movies: movieProvider.trendingMovies,
+                        movies: movieProvider.trendingMovies.take(7).toList(),
                         isLoading: movieProvider.isLoadingTrending,
                         onMovieTap: _onMovieTap,
                       ),
@@ -293,7 +290,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       MovieHorizontalList(
                         title: 'Popüler Filmler',
                         subtitle: 'En çok izlenenler',
-                        movies: movieProvider.popularMovies,
+                        movies: movieProvider.popularMovies.take(7).toList(),
                         isLoading: movieProvider.isLoadingPopular,
                         onMovieTap: _onMovieTap,
                       ),

@@ -1,5 +1,9 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'home_screen.dart';
+import 'my_lists_screen.dart';
+
+import 'watched_movies_screen.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
@@ -13,42 +17,50 @@ class _MainShellState extends State<MainShell> {
 
   final List<Widget> _screens = [
     const HomeScreen(),
-    const _PlaceholderScreen(title: 'Listelerim', icon: Icons.list_alt),
-    const _PlaceholderScreen(title: 'İzlediklerim', icon: Icons.check_circle_outline),
+    const MyListsScreen(),
+    const WatchedMoviesScreen(),
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBody: true,
       body: IndexedStack(
         index: _currentIndex,
         children: _screens,
       ),
       bottomNavigationBar: Container(
-        margin: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 20,
-              offset: const Offset(0, -5),
-            ),
-          ],
-        ),
+        margin: const EdgeInsets.fromLTRB(24, 0, 24, 24),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(24),
-          child: Container(
-            height: 70,
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildNavItem(0, Icons.home_rounded, 'Ana Sayfa'),
-                _buildNavItem(1, Icons.list_alt_rounded, 'Listelerim'),
-                _buildNavItem(2, Icons.check_circle_outline_rounded, 'İzlediklerim'),
-              ],
+          borderRadius: BorderRadius.circular(30),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+            child: Container(
+              height: 65,
+              decoration: BoxDecoration(
+                color: Colors.white.withAlpha(180),
+                borderRadius: BorderRadius.circular(30),
+                border: Border.all(
+                  color: Colors.white.withAlpha(200),
+                  width: 1,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withAlpha(25),
+                    blurRadius: 30,
+                    spreadRadius: 0,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _buildNavItem(0, Icons.explore_outlined, Icons.explore, 'Keşfet'),
+                  _buildNavItem(1, Icons.bookmark_border_rounded, Icons.bookmark_rounded, 'Listelerim'),
+                  _buildNavItem(2, Icons.check_circle_outline_rounded, Icons.check_circle_rounded, 'İzlediklerim'),
+                ],
+              ),
             ),
           ),
         ),
@@ -56,7 +68,7 @@ class _MainShellState extends State<MainShell> {
     );
   }
 
-  Widget _buildNavItem(int index, IconData icon, String label) {
+  Widget _buildNavItem(int index, IconData icon, IconData activeIcon, String label) {
     final isSelected = _currentIndex == index;
     
     return GestureDetector(
@@ -65,32 +77,42 @@ class _MainShellState extends State<MainShell> {
           _currentIndex = index;
         });
       },
+      behavior: HitTestBehavior.opaque,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeInOut,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF667EEA).withOpacity(0.1) : Colors.transparent,
-          borderRadius: BorderRadius.circular(16),
+          color: isSelected 
+              ? const Color(0xFF1A1A1A).withAlpha(25)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
         ),
-        child: Row(
+        child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              icon,
-              color: isSelected ? const Color(0xFF667EEA) : Colors.grey[400],
-              size: 24,
-            ),
-            if (isSelected) ...[
-              const SizedBox(width: 8),
-              Text(
-                label,
-                style: const TextStyle(
-                  color: Color(0xFF667EEA),
-                  fontWeight: FontWeight.w600,
-                  fontSize: 14,
-                ),
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 200),
+              child: Icon(
+                isSelected ? activeIcon : icon,
+                key: ValueKey(isSelected),
+                color: isSelected 
+                    ? const Color(0xFF1A1A1A) 
+                    : Colors.grey[600],
+                size: 24,
               ),
-            ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected 
+                    ? const Color(0xFF1A1A1A) 
+                    : Colors.grey[600],
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                fontSize: 11,
+              ),
+            ),
           ],
         ),
       ),
@@ -116,18 +138,25 @@ class _PlaceholderScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              icon,
-              size: 80,
-              color: Colors.grey[300],
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                icon,
+                size: 64,
+                color: Colors.grey[400],
+              ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
             Text(
               title,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
-                color: Colors.grey[400],
+                color: Color(0xFF1A1A1A),
               ),
             ),
             const SizedBox(height: 8),
@@ -135,7 +164,7 @@ class _PlaceholderScreen extends StatelessWidget {
               'Bu sayfa yakında aktif olacak',
               style: TextStyle(
                 fontSize: 14,
-                color: Colors.grey[400],
+                color: Colors.grey[500],
               ),
             ),
           ],
