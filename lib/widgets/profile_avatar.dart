@@ -1,5 +1,5 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 
 class ProfileAvatar extends StatelessWidget {
   final String? avatarUrl;
@@ -37,28 +37,37 @@ class ProfileAvatar extends StatelessWidget {
             ),
           ],
         ),
-        child: avatarUrl != null && avatarUrl!.isNotEmpty
-            ? ClipOval(
-                child: CachedNetworkImage(
-                  imageUrl: avatarUrl!,
+        child: ClipOval(
+          child: avatarUrl != null && avatarUrl!.isNotEmpty
+              ? Image.file(
+                  File(avatarUrl!),
                   fit: BoxFit.cover,
-                  placeholder: (context, url) => _buildInitials(),
-                  errorWidget: (context, url, error) => _buildInitials(),
-                ),
-              )
-            : _buildInitials(),
+                  errorBuilder: (context, error, stackTrace) => _buildInitials(),
+                )
+              : _buildInitials(),
+        ),
       ),
     );
   }
 
   Widget _buildInitials() {
-    return Center(
-      child: Text(
-        initials,
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: size * 0.36,
-          fontWeight: FontWeight.bold,
+    return Container(
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        shape: BoxShape.circle,
+      ),
+      child: Center(
+        child: Text(
+          initials,
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: size * 0.36,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
     );

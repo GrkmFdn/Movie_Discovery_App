@@ -10,12 +10,14 @@ class MovieProvider with ChangeNotifier {
   
   List<Movie> _popularMovies = [];
   List<Movie> _trendingMovies = [];
+  List<Movie> _topRatedMovies = [];
   List<Movie> _searchResults = [];
   List<Genre> _genres = [];
   final Map<int, List<Movie>> _moviesByGenre = {};
   
   bool _isLoadingPopular = false;
   bool _isLoadingTrending = false;
+  bool _isLoadingTopRated = false;
   bool _isLoadingGenres = false;
   bool _isSearching = false;
   
@@ -25,11 +27,13 @@ class MovieProvider with ChangeNotifier {
   // Getters
   List<Movie> get popularMovies => _popularMovies;
   List<Movie> get trendingMovies => _trendingMovies;
+  List<Movie> get topRatedMovies => _topRatedMovies;
   List<Movie> get searchResults => _searchResults;
   List<Genre> get genres => _genres;
   
   bool get isLoadingPopular => _isLoadingPopular;
   bool get isLoadingTrending => _isLoadingTrending;
+  bool get isLoadingTopRated => _isLoadingTopRated;
   bool get isLoadingGenres => _isLoadingGenres;
   bool get isSearching => _isSearching;
   
@@ -47,6 +51,7 @@ class MovieProvider with ChangeNotifier {
     _error = null;
     _isLoadingPopular = true;
     _isLoadingTrending = true;
+    _isLoadingTopRated = true;
     _isLoadingGenres = true;
     // Başlangıç notify
     notifyListeners();
@@ -55,12 +60,14 @@ class MovieProvider with ChangeNotifier {
       final results = await Future.wait([
         _tmdbService.getPopularMovies(),
         _tmdbService.getTrendingMovies(),
+        _tmdbService.getTopRatedMovies(),
         _tmdbService.getGenres(),
       ]);
 
       _popularMovies = results[0] as List<Movie>;
       _trendingMovies = results[1] as List<Movie>;
-      _genres = results[2] as List<Genre>;
+      _topRatedMovies = results[2] as List<Movie>;
+      _genres = results[3] as List<Genre>;
       
       // İlk 3 kategori için de filmleri önden yükleyelim (opsiyonel ama iyi olur)
       if (_genres.isNotEmpty) {
@@ -75,6 +82,7 @@ class MovieProvider with ChangeNotifier {
     } finally {
       _isLoadingPopular = false;
       _isLoadingTrending = false;
+      _isLoadingTopRated = false;
       _isLoadingGenres = false;
       // Bitiş notify
       notifyListeners();
@@ -84,10 +92,14 @@ class MovieProvider with ChangeNotifier {
   /// Kategoriye göre film yükle - Optimize edilmiş
   Future<void> loadMoviesByGenre(int genreId) async {
     if (_moviesByGenre.containsKey(genreId)) return;
-    
+
     await _loadMoviesByGenreInternal(genreId);
-    notifyListeners();
+
+    if (_moviesByGenre.containsKey(genreId)) {
+      notifyListeners();
+    }
   }
+
 
   /// Dahili kullanım için, notify yapmaz
   Future<void> _loadMoviesByGenreInternal(int genreId) async {
@@ -133,8 +145,16 @@ class MovieProvider with ChangeNotifier {
   
   /// Sayfa yenileme (Pull-to-refresh) için
   Future<void> refresh() async {
-    _initialized = false;
+    _error = null;
     _moviesByGenre.clear();
+
+    _isLoadingPopular = true;
+    _isLoadingTrending = true;
+    _isLoadingTopRated = true;
+    _isLoadingGenres = true;
+    notifyListeners();
+
+    _initialized = false;
     await init();
   }
 }

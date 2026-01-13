@@ -19,6 +19,7 @@ class ApiConstants {
   // Endpoints
   static String get popularMovies => '$baseUrl/movie/popular?api_key=$apiKey&language=$language&region=$region';
   static String get trendingMovies => '$baseUrl/trending/movie/week?api_key=$apiKey&language=$language';
+  static String get topRatedMovies => '$baseUrl/movie/top_rated?api_key=$apiKey&language=$language&region=$region';
   static String get genres => '$baseUrl/genre/movie/list?api_key=$apiKey&language=$language';
   
   static String searchMovies(String query) => 

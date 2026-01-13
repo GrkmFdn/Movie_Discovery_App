@@ -8,7 +8,7 @@ class UserProfile {
   DateTime? birthDate;
   String? avatarUrl;
   String? bio;
-  String? favoriteGenre;
+  List<String> favoriteGenres;  // Changed from String? favoriteGenre
 
   UserProfile({
     this.firstName = '',
@@ -18,7 +18,7 @@ class UserProfile {
     this.birthDate,
     this.avatarUrl,
     this.bio,
-    this.favoriteGenre,
+    this.favoriteGenres = const [],  // Default empty list
   });
 
   String get fullName => '$firstName $lastName'.trim();
@@ -31,6 +31,18 @@ class UserProfile {
   }
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
+    // Migration: eski format (tek string) → yeni format (list)
+    List<String> genres = [];
+    
+    // Yeni format
+    if (json['favoriteGenres'] != null) {
+      genres = List<String>.from(json['favoriteGenres']);
+    }
+    // Eski format migration
+    else if (json['favoriteGenre'] != null && json['favoriteGenre'].toString().isNotEmpty) {
+      genres = [json['favoriteGenre'].toString()];
+    }
+    
     return UserProfile(
       firstName: json['firstName'] ?? '',
       lastName: json['lastName'] ?? '',
@@ -41,7 +53,7 @@ class UserProfile {
           : null,
       avatarUrl: json['avatarUrl'],
       bio: json['bio'],
-      favoriteGenre: json['favoriteGenre'],
+      favoriteGenres: genres,
     );
   }
 
@@ -54,7 +66,7 @@ class UserProfile {
       'birthDate': birthDate?.toIso8601String(),
       'avatarUrl': avatarUrl,
       'bio': bio,
-      'favoriteGenre': favoriteGenre,
+      'favoriteGenres': favoriteGenres,  // Yeni format
     };
   }
 
@@ -72,7 +84,7 @@ class UserProfile {
     DateTime? birthDate,
     String? avatarUrl,
     String? bio,
-    String? favoriteGenre,
+    List<String>? favoriteGenres,
   }) {
     return UserProfile(
       firstName: firstName ?? this.firstName,
@@ -82,7 +94,7 @@ class UserProfile {
       birthDate: birthDate ?? this.birthDate,
       avatarUrl: avatarUrl ?? this.avatarUrl,
       bio: bio ?? this.bio,
-      favoriteGenre: favoriteGenre ?? this.favoriteGenre,
+      favoriteGenres: favoriteGenres ?? this.favoriteGenres,
     );
   }
 }

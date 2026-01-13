@@ -99,8 +99,19 @@ class _WatchedMoviesScreenState extends State<WatchedMoviesScreen> {
         ),
       ),
       trailing: isSelected
-          ? const Icon(Icons.check, color: Color(0xFF667EEA))
+          ? const Icon(Icons.check_circle, color: Color(0xFF667EEA))
           : null,
+    );
+  }
+
+  void _onMovieTap(Movie movie) {
+    final movieProvider = context.read<MovieProvider>();
+    showMovieDetailPopup(
+      context,
+      movie,
+      movieProvider.genres,
+      onAddToList: () {},
+      onMarkWatched: () {},
     );
   }
 
@@ -111,18 +122,18 @@ class _WatchedMoviesScreenState extends State<WatchedMoviesScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Header Section
+            // Modern Gradient Header
             Container(
               padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withAlpha(8),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.vertical(
+                  bottom: Radius.circular(32),
+                ),
               ),
               child: Column(
                 children: [
@@ -132,95 +143,87 @@ class _WatchedMoviesScreenState extends State<WatchedMoviesScreen> {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
+                          color: Colors.white.withOpacity(0.2),
                           borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFF667EEA).withAlpha(60),
-                              blurRadius: 12,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
                         ),
                         child: const Icon(
-                          Icons.check_circle_outline_rounded,
+                          Icons.check_circle_rounded,
                           color: Colors.white,
-                          size: 24,
+                          size: 28,
                         ),
                       ),
                       const SizedBox(width: 16),
                       const Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'İzlediklerim',
-                              style: TextStyle(
-                                fontSize: 26,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF1A1A1A),
-                              ),
-                            ),
-                            SizedBox(height: 2),
-                            Text(
-                              'İzleme geçmişin',
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          ],
+                        child: Text(
+                          'İzlediklerim',
+                          style: TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
                       // Sort Button
                       IconButton(
                         onPressed: _showSortBottomSheet,
                         icon: Container(
-                          padding: const EdgeInsets.all(8),
+                          padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            color: Colors.grey[100],
+                            color: Colors.white.withOpacity(0.2),
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: const Icon(Icons.sort_rounded, color: Color(0xFF1A1A1A)),
+                          child: const Icon(
+                            Icons.sort_rounded,
+                            color: Colors.white,
+                            size: 20,
+                          ),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 16),
+                  
                   // Search Bar
-                  TextField(
-                    controller: _searchController,
-                    onChanged: _onSearchChanged,
-                    decoration: InputDecoration(
-                      hintText: 'İzlenenlerde ara...',
-                      hintStyle: TextStyle(color: Colors.grey[400]),
-                      prefixIcon: Icon(Icons.search, color: Colors.grey[400]),
-                      filled: true,
-                      fillColor: Colors.grey[50],
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide.none,
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: TextField(
+                      controller: _searchController,
+                      onChanged: _onSearchChanged,
+                      decoration: InputDecoration(
+                        hintText: 'Film ara...',
+                        prefixIcon: const Icon(Icons.search, color: Color(0xFF667EEA)),
+                        suffixIcon: _searchController.text.isNotEmpty
+                            ? IconButton(
+                                icon: const Icon(Icons.clear, size: 20),
+                                onPressed: () {
+                                  _searchController.clear();
+                                  _onSearchChanged('');
+                                },
+                              )
+                            : null,
+                        border: InputBorder.none,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
                       ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide(color: Colors.grey[200]!),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: const BorderSide(color: Color(0xFF667EEA), width: 1.5),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                     ),
                   ),
                 ],
               ),
             ),
-
-            // Movies Grid
+            
+            // Content
             Expanded(
               child: Consumer<WatchedProvider>(
                 builder: (context, provider, child) {
@@ -230,7 +233,8 @@ class _WatchedMoviesScreenState extends State<WatchedMoviesScreen> {
                     );
                   }
 
-                  if (provider.watchedMovies.isEmpty) {
+                  final movies = provider.watchedMovies;
+                  if (movies.isEmpty) {
                     return Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -238,60 +242,67 @@ class _WatchedMoviesScreenState extends State<WatchedMoviesScreen> {
                           Container(
                             padding: const EdgeInsets.all(32),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF667EEA).withAlpha(15),
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
+                              ),
                               shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFF667EEA).withOpacity(0.3),
+                                  blurRadius: 20,
+                                  spreadRadius: 2,
+                                  offset: const Offset(0, 10),
+                                ),
+                              ],
                             ),
                             child: const Icon(
-                              Icons.movie_filter_outlined,
+                              Icons.movie_filter_rounded,
                               size: 64,
-                              color: Color(0xFF667EEA),
+                              color: Colors.white,
                             ),
                           ),
                           const SizedBox(height: 24),
                           Text(
-                            provider.isSearching
-                                ? 'Sonuç bulunamadı'
-                                : 'Henüz film izlemediniz',
+                            _searchController.text.isNotEmpty
+                                ? 'Film bulunamadı'
+                                : 'Henüz izlediğiniz film yok',
                             style: const TextStyle(
-                              fontSize: 18,
+                              fontSize: 20,
                               fontWeight: FontWeight.bold,
                               color: Color(0xFF1A1A1A),
                             ),
                           ),
-                          if (!provider.isSearching) ...[
-                            const SizedBox(height: 8),
-                            Text(
-                              'Ana sayfaya gidip izlediğiniz filmleri\nişaretleyebilirsiniz.',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey[500],
-                              ),
+                          const SizedBox(height: 8),
+                          Text(
+                            _searchController.text.isNotEmpty
+                                ? 'Farklı bir arama yapın'
+                                : 'İzlediğiniz filmleri buradan takip edin',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[600],
                             ),
-                          ],
+                          ),
                         ],
                       ),
                     );
                   }
 
                   return GridView.builder(
-                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
+                    padding: const EdgeInsets.all(16),
                     gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2,
-                      childAspectRatio: 0.65,
+                      childAspectRatio: 0.58,
                       crossAxisSpacing: 16,
                       mainAxisSpacing: 16,
                     ),
-                    itemCount: provider.watchedMovies.length,
+                    itemCount: movies.length,
                     itemBuilder: (context, index) {
-                      final movie = provider.watchedMovies[index];
+                      final movie = movies[index];
                       return MovieCard(
                         movie: movie,
-                        onTap: () {
-                          // Detayları göster
-                          final genres = context.read<MovieProvider>().genres;
-                          showMovieDetailPopup(context, movie, genres);
-                        },
+                        width: double.infinity,
+                        height: 240,
+                        onTap: () => _onMovieTap(movie),
                       );
                     },
                   );

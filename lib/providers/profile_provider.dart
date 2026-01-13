@@ -38,6 +38,7 @@ class ProfileProvider with ChangeNotifier {
     }
   }
 
+
   /// Profili kaydet
   Future<void> saveProfile(UserProfile profile) async {
     _isLoading = true;
@@ -64,7 +65,7 @@ class ProfileProvider with ChangeNotifier {
     DateTime? birthDate,
     String? avatarUrl,
     String? bio,
-    String? favoriteGenre,
+    List<String>? favoriteGenres,  // Changed from String? favoriteGenre
   }) async {
     final updatedProfile = _profile.copyWith(
       firstName: firstName,
@@ -74,9 +75,15 @@ class ProfileProvider with ChangeNotifier {
       birthDate: birthDate,
       avatarUrl: avatarUrl,
       bio: bio,
-      favoriteGenre: favoriteGenre,
+      favoriteGenres: favoriteGenres,
     );
     
+    await saveProfile(updatedProfile);
+  }
+  
+  /// Avatar güncelle
+  Future<void> updateAvatar(String avatarPath) async {
+    final updatedProfile = _profile.copyWith(avatarUrl: avatarPath);
     await saveProfile(updatedProfile);
   }
 }

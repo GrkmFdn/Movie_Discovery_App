@@ -45,6 +45,24 @@ class TmdbService {
     }
   }
 
+  /// En yüksek puanlı filmleri getir
+  Future<List<Movie>> getTopRatedMovies({int page = 1}) async {
+    try {
+      final url = '${ApiConstants.topRatedMovies}&page=$page';
+      final response = await http.get(Uri.parse(url));
+      
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final results = data['results'] as List;
+        return results.map((json) => Movie.fromJson(json)).toList();
+      } else {
+        throw Exception('Top rated filmler yüklenemedi: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Bağlantı hatası: $e');
+    }
+  }
+
   /// Film ara
   Future<List<Movie>> searchMovies(String query, {int page = 1}) async {
     if (query.trim().isEmpty) return [];

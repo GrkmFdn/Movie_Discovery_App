@@ -31,7 +31,7 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => MovieProvider()),
         ChangeNotifierProvider(create: (_) => ProfileProvider()..loadProfile()),
-        ChangeNotifierProvider(create: (_) => ListProvider()..loadLists()),
+        ChangeNotifierProvider(create: (_) => ListProvider()),
         ChangeNotifierProvider(create: (_) => WatchedProvider()),
       ],
       child: MaterialApp(
